@@ -9,6 +9,13 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Core.HSceneOptions", "Core.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_HSceneOptions", "KKS_HSceneOptions\KKS_HSceneOptions.csproj", "{07DBDD5F-B781-4B79-89A4-56B84D548E4C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{ADE649D2-28BE-49BE-84D4-02C95FD59348}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Core.HSceneOptions\Core.HSceneOptions.projitems*{07dbdd5f-b781-4b79-89a4-56b84d548e4c}*SharedItemsImports = 4
