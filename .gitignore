@@ -341,3 +341,6 @@ healthchecksdb
 
 # Local Backup
 Backup-3.2.1/
+
+# Local libs
+lib/

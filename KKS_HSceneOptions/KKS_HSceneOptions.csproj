@@ -40,7 +40,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\Illusion\Koikatsu Sunshine\KoikatsuSunshine_VR_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\lib\KKS\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\IllusionLibs.KoikatsuSunshine.Assembly-CSharp-firstpass.2021.9.17\lib\net46\Assembly-CSharp-firstpass.dll</HintPath>
@@ -82,6 +82,12 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Plugin.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>  
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>

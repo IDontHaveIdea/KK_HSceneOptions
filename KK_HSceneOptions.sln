@@ -5,12 +5,15 @@ VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_HSceneOptions", "KK_HSceneOptions\KK_HSceneOptions.csproj", "{7EC94974-E0DB-4EAA-A911-54433295B5EF}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Core.HSceneOptions", "Core.HSceneOptions\Core.HSceneOptions.shproj", "{D6268113-6D23-4521-9929-CF7E068AB416}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Core.HSceneOptions", "Core.HSceneOptions\Core.HSceneOptions.shproj", "{18740F00-662F-48D0-A3AC-6CA0150E3E32}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KKS_HSceneOptions", "KKS_HSceneOptions\KKS_HSceneOptions.csproj", "{07DBDD5F-B781-4B79-89A4-56B84D548E4C}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Core.HSceneOptions\Core.HSceneOptions.projitems*{07dbdd5f-b781-4b79-89a4-56b84d548e4c}*SharedItemsImports = 4
+		Core.HSceneOptions\Core.HSceneOptions.projitems*{18740f00-662f-48d0-a3ac-6ca0150e3e32}*SharedItemsImports = 13
 		Core.HSceneOptions\Core.HSceneOptions.projitems*{7ec94974-e0db-4eaa-a911-54433295b5ef}*SharedItemsImports = 4
-		Core.HSceneOptions\Core.HSceneOptions.projitems*{d6268113-6d23-4521-9929-cf7e068ab416}*SharedItemsImports = 13
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +24,10 @@ Global
 		{7EC94974-E0DB-4EAA-A911-54433295B5EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EC94974-E0DB-4EAA-A911-54433295B5EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EC94974-E0DB-4EAA-A911-54433295B5EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07DBDD5F-B781-4B79-89A4-56B84D548E4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07DBDD5F-B781-4B79-89A4-56B84D548E4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07DBDD5F-B781-4B79-89A4-56B84D548E4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07DBDD5F-B781-4B79-89A4-56B84D548E4C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,14 +1,16 @@
-﻿using BepInEx;
-using BepInEx.Configuration;
-using HarmonyLib;
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+
+using BepInEx;
+using BepInEx.Configuration;
+using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Manager;
+
 using static ChaFileDefine;
 using static KK_HSceneOptions.SpeechControl;
 using static KK_HSceneOptions.Utilities;
@@ -16,15 +18,9 @@ using static KK_HSceneOptions.Utilities;
 namespace KK_HSceneOptions
 {
 	[BepInPlugin(GUID, PluginName, Version)]
-	[BepInProcess("Koikatu")]
-	[BepInProcess("KoikatuVR")]
-	[BepInProcess("Koikatsu Party")]
-	[BepInProcess("Koikatsu Party VR")]
-	public class HSceneOptions : BaseUnityPlugin
+	public partial class HSceneOptions : BaseUnityPlugin
 	{
-		public const string GUID = "MK.KK_HSceneOptions";
 		public const string PluginName = "HSceneOptions";
-		public const string AssembName = "KK_HSceneOptions";
 		public const string Version = "3.2.1";
 
 		internal static bool isVR;
@@ -334,31 +330,6 @@ namespace KK_HSceneOptions
 				"Trigger a voice line based on the current context");			
 		}		
 
-		private void Update()
-		{
-			if (!flags)
-				return;
-
-			if (Input.GetKeyDown(InsertWaitKey.Value.MainKey) && InsertWaitKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				OnInsertClick();
-			else if (Input.GetKeyDown(InsertNowKey.Value.MainKey) && InsertNowKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				OnInsertNoVoiceClick();
-			else if (Input.GetKeyDown(SwallowKey.Value.MainKey) && SwallowKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				flags.click = HFlag.ClickKind.drink;
-			else if (Input.GetKeyDown(SpitKey.Value.MainKey) && SpitKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				flags.click = HFlag.ClickKind.vomit;
-			
-			if (Input.GetKeyDown(SubAccToggleKey.Value.MainKey) && SubAccToggleKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				ToggleMainGirlAccessories(category: 1);
-
-			if (Input.GetKeyDown(PantsuStripKey.Value.MainKey) && PantsuStripKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				SetClothesStateRange(new ClothesKind[] { ClothesKind.shorts }, true);
-			if (Input.GetKeyDown(TopClothesToggleKey.Value.MainKey) && TopClothesToggleKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				SetClothesStateRange(new ClothesKind[] { ClothesKind.top, ClothesKind.bra });
-			if (Input.GetKeyDown(BottomClothesToggleKey.Value.MainKey) && BottomClothesToggleKey.Value.Modifiers.All(x => Input.GetKey(x)))
-				SetClothesStateRange(new ClothesKind[] { ClothesKind.bot });
-		}
-
 		/// <summary>
 		/// Function to equip all accessories
 		/// </summary>
@@ -477,16 +448,28 @@ namespace KK_HSceneOptions
 					return;
 				}
 				flags.AddNotCondomPlay();
+#if KK
 				int num2 = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAdd20 && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
+#else
+				int num2 = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAddH && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
+#endif
 				flags.voice.playVoices[num] = 302 + num2;
 				flags.voice.SetSonyuIdleTime();
 				flags.isDenialvoiceWait = true;
 				if (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P)
 				{
 					int num3 = num ^ 1;
+#if KK
 					if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Singleton<Voice>.Instance.IsVoiceCheck(flags.transVoiceMouth[num3]))
+#else
+					if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Voice.IsPlay(flags.transVoiceMouth[num3]))
+#endif
 					{
+#if KK
 						Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[num3]);
+#else
+						Voice.Stop(flags.transVoiceMouth[num3]);
+#endif
 					}
 				}
 			}
@@ -499,7 +482,11 @@ namespace KK_HSceneOptions
 		private void OnInsertClick()
 		{
 			int num2 = (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P) ? (flags.nowAnimationInfo.id % 2) : 0;
+#if KK
 			int num = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAdd20 && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
+#else
+			int num = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAddH && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
+#endif
 			if (flags.mode != HFlag.EMode.sonyu3PMMF)
 			{
 				if (flags.isInsertOK[num2] || flags.isDebug)
@@ -528,10 +515,17 @@ namespace KK_HSceneOptions
 			if (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P)
 			{
 				int num3 = num2 ^ 1;
+#if KK
 				if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Singleton<Voice>.Instance.IsVoiceCheck(flags.transVoiceMouth[num3]))
 				{
 					Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[num3]);
 				}
+#else
+				if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Voice.IsPlay(flags.transVoiceMouth[num3]))
+				{
+					Voice.Stop(flags.transVoiceMouth[num3]);
+				}
+#endif
 			}
 		}
 
