@@ -62,7 +62,6 @@ namespace KK_HSceneOptions
 		[HarmonyPatch(typeof(VRHScene), "LateUpdate")]
 		public static void VRHsceneLateUpdatePostfix() => GaugeLimiter();
 		
-
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(VRHScene), "ChangeAnimator")]
 		public static void ChangeAnimatorPrefix(ref bool _isForceCameraReset)
@@ -70,7 +69,7 @@ namespace KK_HSceneOptions
 			if (VRResetCamera.Value)
 				_isForceCameraReset = true;
 		}
-
+		
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(VRHScene), "ChangeAnimator")]
 		public static void ChangeAnimatorPostVR() => Hooks.motionChangeOld = null;

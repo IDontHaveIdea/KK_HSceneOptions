@@ -2,15 +2,17 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+using static KK_HSceneOptions.HSceneOptions;
+
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("KKS_HSceneOptions")]
+[assembly: AssemblyTitle(AssembName)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("KKS_HSceneOptions")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyCompany("MayouKurayami")]
+[assembly: AssemblyProduct(AssembName)]
+[assembly: AssemblyCopyright("Copyright ©  2020-2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +22,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("07dbdd5f-b781-4b79-89a4-56b84d548e4c")]
+[assembly: Guid("7ec94974-e0db-4eaa-a911-54433295b5ef")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -32,5 +34,6 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion(Version)]
+[assembly: AssemblyFileVersion(Version)]
+

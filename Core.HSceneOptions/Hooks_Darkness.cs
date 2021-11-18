@@ -6,7 +6,7 @@ using static KK_HSceneOptions.Hooks;
 namespace KK_HSceneOptions
 {
 	public static class Hooks_Darkness
-	{
+	{	
 		//When changing between service modes, if the male gauge is above the orgasm threshold then after the transition the animation will be forced to OLoop with the menu disabled.
 		//These hooks bypass that behavior when DisableAutoPrecum is set to true.
 		[HarmonyPrefix]
@@ -16,16 +16,16 @@ namespace KK_HSceneOptions
 
 		////////////////////////////////////////////////////////////////////////////////
 		/// Keep the in-game menu accessible in forced OLoop
-		[HarmonyTranspiler]
-		[HarmonyPatch(typeof(HSprite), nameof(HSprite.Sonyu3PDarkProc))]
+		//[HarmonyTranspiler]
+		//[HarmonyPatch(typeof(HSprite), nameof(HSprite.Sonyu3PDarkProc))]
 		public static IEnumerable<CodeInstruction> HSpriteDarkSonyuProcTpl(IEnumerable<CodeInstruction> instructions) => HSpriteSonyuProcTpl(instructions);
 
 
 		////////////////////////////////////////////////////////////////////////////////
 		/// See section "Disable AutoFinish in Service Modes" under KK_HSceneOptions.Hooks
 		/// 
-		[HarmonyTranspiler]
-		[HarmonyPatch(typeof(H3PDarkHoushi), "LoopProc")]
+		//[HarmonyTranspiler]
+		//[HarmonyPatch(typeof(H3PDarkHoushi), "LoopProc")]
 		public static IEnumerable<CodeInstruction> Houshi3PDisableAutoFinishTpl(IEnumerable<CodeInstruction> instructions) => HoushiDisableAutoFinish(
 			instructions, AccessTools.Method(typeof(Hooks_Darkness), nameof(Houshi3PDarkMaleGaugeOverride)));
 
@@ -47,7 +47,8 @@ namespace KK_HSceneOptions
 				return vanillaThreshold;
 		}
 
-		#region Override game behavior to extend or exit OLoop based on plugin status
+#if KK  // Disable for KKS compilation
+#region Override game behavior to extend or exit OLoop based on plugin status
 
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(H3PDarkSonyu), nameof(H3PDarkSonyu.Proc))]
@@ -60,10 +61,10 @@ namespace KK_HSceneOptions
 				instructions,
 				targetOperand: AccessTools.Method(typeof(HActionBase), "IsCheckVoicePlay"),
 				overrideValue: 0);
+#endregion
+#endif
 
-		#endregion
-
-		#region Quick Position Change
+#region Quick Position Change
 
 		/// <summary>
 		/// If maintaining motion when changing positions, prevent the game from resetting H related parameters (e.g., speed gauge) after the new position is loaded. 
@@ -75,6 +76,6 @@ namespace KK_HSceneOptions
 		public static bool MotionChangeOverrideDark(HActionBase __instance, ref bool __result)
 			=> MotionChangeOverride(__instance, ref __result);
 
-		#endregion
+#endregion
 	}
 }

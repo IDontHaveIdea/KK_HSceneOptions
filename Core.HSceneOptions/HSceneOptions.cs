@@ -85,11 +85,11 @@ namespace KK_HSceneOptions
 			{
 				harmony.PatchAll(typeof(Hooks));
 
-				if (isVR = Type.GetType("VRHScene, Assembly-CSharp") != null)
-					harmony.PatchAll(typeof(Hooks_VR));
+				//if (isVR = Type.GetType("VRHScene, Assembly-CSharp") != null)
+				//	harmony.PatchAll(typeof(Hooks_VR));
 
-				if (isDarkness = Type.GetType("H3PDarkSonyu, Assembly-CSharp") != null)
-					harmony.PatchAll(typeof(Hooks_Darkness));
+				//if (isDarkness = Type.GetType("H3PDarkSonyu, Assembly-CSharp") != null)
+				//	harmony.PatchAll(typeof(Hooks_Darkness));
 				
 			}
 			catch (Exception)

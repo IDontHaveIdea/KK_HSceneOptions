@@ -18,7 +18,11 @@ namespace KK_HSceneOptions
 		//Hooking method "MapSameObjectDisable" because: "Something that happens at the end of H scene loading, good enough place to hook" - DeathWeasel1337/Anon11
 		//https://github.com/DeathWeasel1337/KK_Plugins/blob/master/KK_EyeShaking/KK.EyeShaking.Hooks.cs#L20
 		[HarmonyPostfix]
+#if KK
 		[HarmonyPatch(typeof(HSceneProc), "MapSameObjectDisable")]
+#else
+		[HarmonyPatch(typeof(HSceneProc), "SetShortcutKey")]
+#endif
 		public static void HSceneProcLoadPostfix(HSceneProc __instance)
 		{
 			var females = (List<ChaControl>)Traverse.Create(__instance).Field("lstFemale").GetValue();
@@ -53,12 +57,11 @@ namespace KK_HSceneOptions
 			animationToggle = __instance.gameObject.AddComponent<AnimationToggle>();
 			speechControl = __instance.gameObject.AddComponent<SpeechControl>();
 		}
-
+	
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(HSceneProc), "LateUpdate")]
 		public static void HSceneLateUpdatePostfix() => GaugeLimiter();
 		
-
 		/// <summary>
 		/// The vanilla game does not have any moan or breath sounds available for the precum (OLoop) animation.
 		/// This patch makes the game play sound effects as if it's in strong loop when the game is in fact playing OLoop without entering cum,
@@ -88,7 +91,6 @@ namespace KK_HSceneOptions
 			if (orgasmAnims.Any(str => _nextAnimation.Contains(str)))
 				animationToggle.forceStopVoice = false;
 		}
-
 		
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(HFlag.VoiceFlag), nameof(HFlag.VoiceFlag.IsSonyuIdleTime))]
@@ -113,8 +115,8 @@ namespace KK_HSceneOptions
 
 			return true;
 		}
-
-		#region Mute all female lines
+		
+#region Mute all female lines
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(HVoiceCtrl), "VoiceProc")]
@@ -129,8 +131,12 @@ namespace KK_HSceneOptions
 				return true;
 		}
 
-		//In 3P service modes, the duration of orgasm is entirely dependent on the duration of the spoken line with no regard to breath, such that if we disable speech completely then the orgasm would only last an instant.
-		//Therefore, here we override the condition for continuing orgasm such that the the animation clip will loop at least 5 times when speech is disabled. 
+		//In 3P service modes, the duration of orgasm is entirely dependent on the duration of the spoken
+		//line with no regard to breath, such that if we disable speech completely then the orgasm would only
+		//last an instant. Therefore, here we override the condition for continuing orgasm such that the the animation clip
+		//will loop at least 5 times when speech is disabled.
+		//TODO: Now
+#if KK
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(H3PHoushi), nameof(H3PHoushi.Proc))]
 		public static IEnumerable<CodeInstruction> H3PHoushiExtendTpl(IEnumerable<CodeInstruction> instructions)
@@ -147,9 +153,9 @@ namespace KK_HSceneOptions
 
 		public static int H3PHoushiExtendStackOverride(int vanillaValue)
 			=> (SpeechControlMode.Value == SpeechMode.MuteAll &&  lstFemale[0].getAnimatorStateInfo(0).normalizedTime < 5f) ? 1 : vanillaValue;
+#endif
 
-
-		#endregion
+#endregion
 
 
 		[HarmonyPostfix]
@@ -170,7 +176,7 @@ namespace KK_HSceneOptions
 		}
 
 
-		#region Force start orgasm when pressing menu buttons
+#region Force start orgasm when pressing menu buttons
 		/// If precum countdown timer is set, forcibly start orgasm immediately when pressing the corresponding menu buttons so that the start of orgasm is synchronized with the start of the countdown.
 		/// Also forcibly start orgasm during service modes if auto finish is disabled, as the buttons wouldn't do anything when the animation is not in OLoop
 
@@ -190,10 +196,10 @@ namespace KK_HSceneOptions
 				animationToggle.ManualOrgasm(inside: false);
 		}
 
-		#endregion
+#endregion
 
 
-		#region Disable non-functional controlpad input during forced OLoop
+#region Disable non-functional controlpad input during forced OLoop
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(HSprite), "OnSpeedUpClick")]
@@ -240,7 +246,7 @@ namespace KK_HSceneOptions
 				return true;
 		}
 
-		#endregion
+#endregion
 
 
 		//When changing between service modes, if the male gauge is above the orgasm threshold then after the transition the animation will be forced to OLoop with the menu disabled.
@@ -269,7 +275,7 @@ namespace KK_HSceneOptions
 		}
 
 
-		#region Keep in-game menu accessible when in forced OLoop
+#region Keep in-game menu accessible when in forced OLoop
 
 		/// <summary>
 		/// Make the game treats forced OLoop the same as SLoop, thus preventing the game menu from deactivating during forced OLoop
@@ -298,11 +304,10 @@ namespace KK_HSceneOptions
 		/// <returns>The value to be pushed back onto the stack to replace what was on it.</returns>
 		internal static bool HSpriteProcStackOverride(bool valueOnStack) => animationToggle.forceOLoop || valueOnStack;		
 
-		#endregion
+#endregion
 
 
-
-		#region Disable AutoFinish in Service Modes
+#region Disable AutoFinish in Service Modes
 
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(HHoushi), "LoopProc")]
@@ -354,7 +359,8 @@ namespace KK_HSceneOptions
 		}
 
 		/// <summary>
-		/// Designed to modify the stack and override the orgasm threshold from 70 to 110 if DisableAutoFinish is enabled, effectively making it impossible to pass the threshold.
+		/// Designed to modify the stack and override the orgasm threshold from 70 to 110 if DisableAutoFinish
+		/// is enabled, effectively making it impossible to pass the threshold.
 		/// Also, manually activate the orgasm menu buttons if male gauge is past 70. 
 		/// </summary>
 		/// <returns>The value to replace the vanilla threshold value</returns>
@@ -376,9 +382,10 @@ namespace KK_HSceneOptions
 
 
 		#region Override game behavior to extend or exit OLoop based on plugin status
-		//In the game code for the various sex modes, the logic for when the precum animation (OLoop) should end involves checking whether the girl is done speaking.
-		//Therefore, to extend OLoop we'd need to find the check for speech then override its returned value.
-
+		//In the game code for the various sex modes, the logic for when the precum animation (OLoop) should
+		//end involves checking whether the girl is done speaking. Therefore, to extend OLoop we'd need to
+		//find the check for speech then override its returned value.
+#if KK
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(HSonyu), nameof(HSonyu.Proc))]
 		[HarmonyPatch(typeof(HMasturbation), nameof(HMasturbation.Proc))]
@@ -386,13 +393,10 @@ namespace KK_HSceneOptions
 		public static IEnumerable<CodeInstruction> OLoopExtendTpl(IEnumerable<CodeInstruction> instructions) 
 			=> OLoopExtendInstructions(
 				instructions,
-#if KK
 				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsVoiceCheck), new Type[] { typeof(Transform), typeof(bool) }),
-#else
-				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
-#endif
 				targetNextOpCode: OpCodes.Brtrue,
 				overrideValue: 1);
+//				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
 
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(H3PHoushi), nameof(H3PHoushi.Proc))]
@@ -412,18 +416,15 @@ namespace KK_HSceneOptions
 			//This injects an override for the first condition
 			List<CodeInstruction> instructionList = (List<CodeInstruction>) OLoopExtendInstructions(
 				instructions,
-#if KK
 				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsVoiceCheck), new Type[] { typeof(Transform), typeof(bool) }),
-#else
-				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
-#endif
 				overrideValue: 1);
+
+//				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
 
 			//Overrides the second condition and return the modified instructions
 			var secondVoiceCheck = AccessTools.Field(typeof(HVoiceCtrl.Voice), nameof(HVoiceCtrl.Voice.state));		
 			return OLoopExtendInstructions(instructionList, targetOperand: secondVoiceCheck, targetNextOpCode: OpCodes.Brfalse, overrideValue: 1);
 		}
-
 
 		/// <summary>
 		/// Within the given set of instructions, find the instruction that matches the specified operand/opcode and insert a call to OLoopStackOverride that allows extending/exiting OLoop based on the status of the plugin
@@ -466,13 +467,12 @@ namespace KK_HSceneOptions
 			else
 				return vanillaValue;
 		}
+#endif
 
-#endregion
+		#endregion
 
 
-
-#region Quick Position Change
-
+		#region Quick Position Change
 
 		internal static string motionChangeOld;
 		
@@ -582,7 +582,6 @@ namespace KK_HSceneOptions
 #endregion
 
 
-
 #region Start action immediately by interrupting voice
 
 		[HarmonyPostfix]
@@ -619,7 +618,6 @@ namespace KK_HSceneOptions
 				}
 			}
 		}
-
 #endregion
 	}
 }
