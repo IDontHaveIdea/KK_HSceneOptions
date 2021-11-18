@@ -296,7 +296,7 @@ namespace KK_HSceneOptions
 		/// Replace a boolean value on the stack to true if OLoop is being enforced by this plugin. Otherwise, return the original value on the stack.
 		/// </summary>
 		/// <returns>The value to be pushed back onto the stack to replace what was on it.</returns>
-		internal static bool HSpriteProcStackOverride(bool valueOnStack) => animationToggle.forceOLoop || valueOnStack;		
+		internal static bool HSpriteProcStackOverride(bool valueOnStack) => animationToggle.forceOLoop ? true : valueOnStack;		
 
 		#endregion
 
@@ -386,11 +386,7 @@ namespace KK_HSceneOptions
 		public static IEnumerable<CodeInstruction> OLoopExtendTpl(IEnumerable<CodeInstruction> instructions) 
 			=> OLoopExtendInstructions(
 				instructions,
-#if KK
 				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsVoiceCheck), new Type[] { typeof(Transform), typeof(bool) }),
-#else
-				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
-#endif
 				targetNextOpCode: OpCodes.Brtrue,
 				overrideValue: 1);
 
@@ -412,11 +408,7 @@ namespace KK_HSceneOptions
 			//This injects an override for the first condition
 			List<CodeInstruction> instructionList = (List<CodeInstruction>) OLoopExtendInstructions(
 				instructions,
-#if KK
 				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsVoiceCheck), new Type[] { typeof(Transform), typeof(bool) }),
-#else
-				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
-#endif
 				overrideValue: 1);
 
 			//Overrides the second condition and return the modified instructions
@@ -467,11 +459,11 @@ namespace KK_HSceneOptions
 				return vanillaValue;
 		}
 
-#endregion
+		#endregion
 
 
 
-#region Quick Position Change
+		#region Quick Position Change
 
 
 		internal static string motionChangeOld;
@@ -486,7 +478,7 @@ namespace KK_HSceneOptions
 			string[] loopAnims = new string[] { "WLoop", "SLoop", "OLoop" };
 			bool inPistonSameMode = flags.selectAnimationListInfo.mode == flags.mode 
 				&& loopAnims.Any(str => flags.nowAnimStateName.Contains(str)) 
-				&& (!flags.isAnalPlay || flags.selectAnimationListInfo.paramFemale.isAnal);
+				&& (flags.isAnalPlay ? flags.selectAnimationListInfo.paramFemale.isAnal : true);
 
 			if (QuickPositionChange.Value == PositionSkipMode.Always || (QuickPositionChange.Value == PositionSkipMode.Auto && inPistonSameMode))
 			{
@@ -498,11 +490,7 @@ namespace KK_HSceneOptions
 					flags.voice.playVoices[i] = -1;
 
 					if (voice.nowVoices[i].state == HVoiceCtrl.VoiceKind.voice)
-#if KK
 						Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[i]);
-#else
-						Voice.Stop(flags.transVoiceMouth[i]);
-#endif
 				}
 				//Reset flags.click to bypass the vanilla behavior of switching back to idle animation before changing position
 				flags.click = HFlag.ClickKind.none;
@@ -579,11 +567,11 @@ namespace KK_HSceneOptions
 		[HarmonyPatch(typeof(HSceneProc), "ChangeAnimator")]
 		public static void ChangeAnimatorPost() => motionChangeOld = null;
 
-#endregion
+		#endregion
 
 
 
-#region Start action immediately by interrupting voice
+		#region Start action immediately by interrupting voice
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(HSprite), nameof(HSprite.OnInsertNoVoiceClick))]
@@ -611,15 +599,11 @@ namespace KK_HSceneOptions
 				for (int i = 0; i < 2; i++)
 				{
 					if (voice.nowVoices[i].state == HVoiceCtrl.VoiceKind.voice)
-#if KK
 						Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[i]);
-#else
-						Voice.Stop(flags.transVoiceMouth[i]);
-#endif
 				}
 			}
 		}
 
-#endregion
+		#endregion
 	}
 }

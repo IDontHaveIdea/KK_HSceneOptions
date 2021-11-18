@@ -5,7 +5,13 @@ VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_HSceneOptions", "KK_HSceneOptions\KK_HSceneOptions.csproj", "{7EC94974-E0DB-4EAA-A911-54433295B5EF}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Core.HSceneOptions", "Core.HSceneOptions\Core.HSceneOptions.shproj", "{D6268113-6D23-4521-9929-CF7E068AB416}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Core.HSceneOptions\Core.HSceneOptions.projitems*{7ec94974-e0db-4eaa-a911-54433295b5ef}*SharedItemsImports = 4
+		Core.HSceneOptions\Core.HSceneOptions.projitems*{d6268113-6d23-4521-9929-cf7e068ab416}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU

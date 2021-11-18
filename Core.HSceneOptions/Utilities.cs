@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
 using HarmonyLib;
@@ -40,7 +39,7 @@ namespace KK_HSceneOptions
 
 			for (var i = 0; i < instructions.Count; i++)
 			{
-				if (clipNames.Contains(instructions[i].operand as string) && (MethodInfo)instructions[i + 1].operand == animatorStateInfoMethod)
+				if (clipNames.Contains(instructions[i].operand as string) && instructions[i + 1].operand == animatorStateInfoMethod)
 				{
 					rangeStart = i + 2;
 					break;
@@ -52,7 +51,7 @@ namespace KK_HSceneOptions
 
 			for (var i = rangeStart + 1; i < instructions.Count; i++)
 			{
-				if ((MethodInfo)instructions[i].operand == animatorStateInfoMethod && !clipNames.Contains(instructions[i - 1].operand as string))
+				if (instructions[i].operand == animatorStateInfoMethod && !clipNames.Contains(instructions[i - 1].operand as string))
 				{
 					rangeEnd = i;
 					break;
