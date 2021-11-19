@@ -17,12 +17,9 @@ namespace KK_HSceneOptions
 		//This should hook to a method that loads as late as possible in the loading phase
 		//Hooking method "MapSameObjectDisable" because: "Something that happens at the end of H scene loading, good enough place to hook" - DeathWeasel1337/Anon11
 		//https://github.com/DeathWeasel1337/KK_Plugins/blob/master/KK_EyeShaking/KK.EyeShaking.Hooks.cs#L20
-		[HarmonyPostfix]
 #if KK
+		[HarmonyPostfix]
 		[HarmonyPatch(typeof(HSceneProc), "MapSameObjectDisable")]
-#else
-		[HarmonyPatch(typeof(HSceneProc), "SetShortcutKey")]
-#endif
 		public static void HSceneProcLoadPostfix(HSceneProc __instance)
 		{
 			var females = (List<ChaControl>)Traverse.Create(__instance).Field("lstFemale").GetValue();
@@ -57,11 +54,50 @@ namespace KK_HSceneOptions
 			animationToggle = __instance.gameObject.AddComponent<AnimationToggle>();
 			speechControl = __instance.gameObject.AddComponent<SpeechControl>();
 		}
-	
+#elif KKS
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(HSceneProc), "SetShortcutKey")]
+		public static void HSceneProcLoadPostfix(HSceneProc __instance)
+		{
+			var females = (List<ChaControl>)Traverse.Create(__instance).Field("lstFemale").GetValue();
+			sprites.Clear();
+			sprites.Add(__instance.sprite);
+
+			lstmMale = new List<ChaControl> { Traverse.Create(__instance).Field("male").GetValue<ChaControl>() };
+			if (isDarkness)
+				lstmMale.Add(Traverse.Create(__instance).Field("male1").GetValue<ChaControl>());
+			lstmMale = lstmMale.FindAll(male => male != null);
+
+			lstFemale = females;
+			lstProc = (List<HActionBase>)Traverse.Create(__instance).Field("lstProc").GetValue();
+			flags = __instance.flags;
+			voice = __instance.voice;
+			hands[0] = __instance.hand;
+			hands[1] = __instance.hand1;
+
+			EquipAllAccessories(females);
+			foreach (HSprite sprite in sprites)
+				LockGaugesAction(sprite);
+
+			if (HideMaleShadow.Value)
+				MaleShadow();
+
+			if (HideFemaleShadow.Value)
+				FemaleShadow();
+
+			if (SpeechControlMode.Value == SpeechMode.Timer)
+				SetVoiceTimer();
+
+			animationToggle = __instance.gameObject.AddComponent<AnimationToggle>();
+			speechControl = __instance.gameObject.AddComponent<SpeechControl>();
+		}
+#endif
+
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(HSceneProc), "LateUpdate")]
 		public static void HSceneLateUpdatePostfix() => GaugeLimiter();
 		
+
 		/// <summary>
 		/// The vanilla game does not have any moan or breath sounds available for the precum (OLoop) animation.
 		/// This patch makes the game play sound effects as if it's in strong loop when the game is in fact playing OLoop without entering cum,
@@ -91,6 +127,7 @@ namespace KK_HSceneOptions
 			if (orgasmAnims.Any(str => _nextAnimation.Contains(str)))
 				animationToggle.forceStopVoice = false;
 		}
+
 		
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(HFlag.VoiceFlag), nameof(HFlag.VoiceFlag.IsSonyuIdleTime))]
@@ -115,7 +152,7 @@ namespace KK_HSceneOptions
 
 			return true;
 		}
-		
+
 #region Mute all female lines
 
 		[HarmonyPrefix]
@@ -131,12 +168,8 @@ namespace KK_HSceneOptions
 				return true;
 		}
 
-		//In 3P service modes, the duration of orgasm is entirely dependent on the duration of the spoken
-		//line with no regard to breath, such that if we disable speech completely then the orgasm would only
-		//last an instant. Therefore, here we override the condition for continuing orgasm such that the the animation clip
-		//will loop at least 5 times when speech is disabled.
-		//TODO: Now
-#if KK
+		//In 3P service modes, the duration of orgasm is entirely dependent on the duration of the spoken line with no regard to breath, such that if we disable speech completely then the orgasm would only last an instant.
+		//Therefore, here we override the condition for continuing orgasm such that the the animation clip will loop at least 5 times when speech is disabled. 
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(H3PHoushi), nameof(H3PHoushi.Proc))]
 		public static IEnumerable<CodeInstruction> H3PHoushiExtendTpl(IEnumerable<CodeInstruction> instructions)
@@ -153,7 +186,7 @@ namespace KK_HSceneOptions
 
 		public static int H3PHoushiExtendStackOverride(int vanillaValue)
 			=> (SpeechControlMode.Value == SpeechMode.MuteAll &&  lstFemale[0].getAnimatorStateInfo(0).normalizedTime < 5f) ? 1 : vanillaValue;
-#endif
+
 
 #endregion
 
@@ -302,9 +335,10 @@ namespace KK_HSceneOptions
 		/// Replace a boolean value on the stack to true if OLoop is being enforced by this plugin. Otherwise, return the original value on the stack.
 		/// </summary>
 		/// <returns>The value to be pushed back onto the stack to replace what was on it.</returns>
-		internal static bool HSpriteProcStackOverride(bool valueOnStack) => animationToggle.forceOLoop || valueOnStack;		
+		internal static bool HSpriteProcStackOverride(bool valueOnStack) => animationToggle.forceOLoop ? true : valueOnStack;		
 
 #endregion
+
 
 
 #region Disable AutoFinish in Service Modes
@@ -359,8 +393,7 @@ namespace KK_HSceneOptions
 		}
 
 		/// <summary>
-		/// Designed to modify the stack and override the orgasm threshold from 70 to 110 if DisableAutoFinish
-		/// is enabled, effectively making it impossible to pass the threshold.
+		/// Designed to modify the stack and override the orgasm threshold from 70 to 110 if DisableAutoFinish is enabled, effectively making it impossible to pass the threshold.
 		/// Also, manually activate the orgasm menu buttons if male gauge is past 70. 
 		/// </summary>
 		/// <returns>The value to replace the vanilla threshold value</returns>
@@ -377,14 +410,13 @@ namespace KK_HSceneOptions
 				return vanillaThreshold;
 		}
 
-		#endregion
+#endregion
 
 
 
-		#region Override game behavior to extend or exit OLoop based on plugin status
-		//In the game code for the various sex modes, the logic for when the precum animation (OLoop) should
-		//end involves checking whether the girl is done speaking. Therefore, to extend OLoop we'd need to
-		//find the check for speech then override its returned value.
+#region Override game behavior to extend or exit OLoop based on plugin status
+		//In the game code for the various sex modes, the logic for when the precum animation (OLoop) should end involves checking whether the girl is done speaking.
+		//Therefore, to extend OLoop we'd need to find the check for speech then override its returned value.
 #if KK
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(HSonyu), nameof(HSonyu.Proc))]
@@ -396,8 +428,18 @@ namespace KK_HSceneOptions
 				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsVoiceCheck), new Type[] { typeof(Transform), typeof(bool) }),
 				targetNextOpCode: OpCodes.Brtrue,
 				overrideValue: 1);
-//				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
-
+#elif KKS
+		[HarmonyTranspiler]
+		[HarmonyPatch(typeof(HSonyu), nameof(HSonyu.Proc))]
+		[HarmonyPatch(typeof(HMasturbation), nameof(HMasturbation.Proc))]
+		[HarmonyPatch(typeof(HLesbian), nameof(HLesbian.Proc))]
+		public static IEnumerable<CodeInstruction> OLoopExtendTpl(IEnumerable<CodeInstruction> instructions)
+			=> OLoopExtendInstructions(
+				instructions,
+				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
+				targetNextOpCode: OpCodes.Brtrue,
+				overrideValue: 1);
+#endif
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(H3PHoushi), nameof(H3PHoushi.Proc))]
 		[HarmonyPatch(typeof(H3PSonyu), nameof(H3PSonyu.Proc))]
@@ -408,6 +450,7 @@ namespace KK_HSceneOptions
 				targetNextOpCode: OpCodes.Brfalse,
 				overrideValue: 0);
 
+#if KK
 		[HarmonyTranspiler]
 		[HarmonyPatch(typeof(HHoushi), nameof(HHoushi.Proc))]
 		public static IEnumerable<CodeInstruction> HoushiOLoopExtendTpl(IEnumerable<CodeInstruction> instructions)
@@ -419,12 +462,27 @@ namespace KK_HSceneOptions
 				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsVoiceCheck), new Type[] { typeof(Transform), typeof(bool) }),
 				overrideValue: 1);
 
-//				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
-
 			//Overrides the second condition and return the modified instructions
 			var secondVoiceCheck = AccessTools.Field(typeof(HVoiceCtrl.Voice), nameof(HVoiceCtrl.Voice.state));		
 			return OLoopExtendInstructions(instructionList, targetOperand: secondVoiceCheck, targetNextOpCode: OpCodes.Brfalse, overrideValue: 1);
 		}
+#elif KKS
+		[HarmonyTranspiler]
+		[HarmonyPatch(typeof(HHoushi), nameof(HHoushi.Proc))]
+		public static IEnumerable<CodeInstruction> HoushiOLoopExtendTpl(IEnumerable<CodeInstruction> instructions)
+		{
+			//In Houshi mode's vanilla code there are two conditions that both have to be met for OLoop to be continued.
+			//This injects an override for the first condition
+			List<CodeInstruction> instructionList = (List<CodeInstruction>)OLoopExtendInstructions(
+				instructions,
+				targetOperand: AccessTools.Method(typeof(Voice), nameof(Voice.IsPlay), new Type[] { typeof(Transform), typeof(bool) }),
+				overrideValue: 1);
+
+			//Overrides the second condition and return the modified instructions
+			var secondVoiceCheck = AccessTools.Field(typeof(HVoiceCtrl.Voice), nameof(HVoiceCtrl.Voice.state));
+			return OLoopExtendInstructions(instructionList, targetOperand: secondVoiceCheck, targetNextOpCode: OpCodes.Brfalse, overrideValue: 1);
+		}
+#endif
 
 		/// <summary>
 		/// Within the given set of instructions, find the instruction that matches the specified operand/opcode and insert a call to OLoopStackOverride that allows extending/exiting OLoop based on the status of the plugin
@@ -467,15 +525,16 @@ namespace KK_HSceneOptions
 			else
 				return vanillaValue;
 		}
-#endif
 
-		#endregion
+#endregion
 
 
-		#region Quick Position Change
+
+#region Quick Position Change
+
 
 		internal static string motionChangeOld;
-		
+#if KK
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(HSprite), nameof(HSprite.OnChangePlaySelect))]
 		public static void OnChangePositionButtonPost()
@@ -486,7 +545,7 @@ namespace KK_HSceneOptions
 			string[] loopAnims = new string[] { "WLoop", "SLoop", "OLoop" };
 			bool inPistonSameMode = flags.selectAnimationListInfo.mode == flags.mode 
 				&& loopAnims.Any(str => flags.nowAnimStateName.Contains(str)) 
-				&& (!flags.isAnalPlay || flags.selectAnimationListInfo.paramFemale.isAnal);
+				&& (flags.isAnalPlay ? flags.selectAnimationListInfo.paramFemale.isAnal : true);
 
 			if (QuickPositionChange.Value == PositionSkipMode.Always || (QuickPositionChange.Value == PositionSkipMode.Auto && inPistonSameMode))
 			{
@@ -498,11 +557,7 @@ namespace KK_HSceneOptions
 					flags.voice.playVoices[i] = -1;
 
 					if (voice.nowVoices[i].state == HVoiceCtrl.VoiceKind.voice)
-#if KK
 						Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[i]);
-#else
-						Voice.Stop(flags.transVoiceMouth[i]);
-#endif
 				}
 				//Reset flags.click to bypass the vanilla behavior of switching back to idle animation before changing position
 				flags.click = HFlag.ClickKind.none;
@@ -511,6 +566,39 @@ namespace KK_HSceneOptions
 					motionChangeOld = flags.nowAnimStateName;
 			}			
 		}
+#elif KKS
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(HSprite), nameof(HSprite.OnChangePlaySelect))]
+		public static void OnChangePositionButtonPost()
+		{
+			if (flags.selectAnimationListInfo == null)
+				return;
+
+			string[] loopAnims = new string[] { "WLoop", "SLoop", "OLoop" };
+			bool inPistonSameMode = flags.selectAnimationListInfo.mode == flags.mode
+				&& loopAnims.Any(str => flags.nowAnimStateName.Contains(str))
+				&& (flags.isAnalPlay ? flags.selectAnimationListInfo.paramFemale.isAnal : true);
+
+			if (QuickPositionChange.Value == PositionSkipMode.Always || (QuickPositionChange.Value == PositionSkipMode.Auto && inPistonSameMode))
+			{
+				//Reset voiceWait to false so that HSceneProc.ChangeAnimator will run immediately
+				flags.voiceWait = false;
+
+				for (int i = 0; i < 2; i++)
+				{
+					flags.voice.playVoices[i] = -1;
+
+					if (voice.nowVoices[i].state == HVoiceCtrl.VoiceKind.voice)
+						Voice.Stop(flags.transVoiceMouth[i]);
+				}
+				//Reset flags.click to bypass the vanilla behavior of switching back to idle animation before changing position
+				flags.click = HFlag.ClickKind.none;
+
+				if (inPistonSameMode)
+					motionChangeOld = flags.nowAnimStateName;
+			}
+		}
+#endif
 
 		/// <summary>
 		/// If maintaining motion when changing positions, prevent the game from resetting H related parameters (e.g., speed gauge) after the new position is loaded. 
@@ -582,6 +670,7 @@ namespace KK_HSceneOptions
 #endregion
 
 
+
 #region Start action immediately by interrupting voice
 
 		[HarmonyPostfix]
@@ -601,8 +690,9 @@ namespace KK_HSceneOptions
 			ForceStopVoice(ControlPadInterrupt.Value
 				&& __instance.IsSpriteAciotn() && (isVR || Input.GetMouseButtonDown(0))
 				&& interruptibleAnims.Any(str => flags.nowAnimStateName.EndsWith(str)) && !flags.nowAnimStateName.Contains("Insert"));
-		}		
+		}
 
+#if KK
 		internal static void ForceStopVoice(bool condition = true)
 		{
 			if (condition)
@@ -610,14 +700,24 @@ namespace KK_HSceneOptions
 				for (int i = 0; i < 2; i++)
 				{
 					if (voice.nowVoices[i].state == HVoiceCtrl.VoiceKind.voice)
-#if KK
 						Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[i]);
-#else
-						Voice.Stop(flags.transVoiceMouth[i]);
-#endif
 				}
 			}
 		}
+#elif KKS
+		internal static void ForceStopVoice(bool condition = true)
+		{
+			if (condition)
+			{
+				for (int i = 0; i < 2; i++)
+				{
+					if (voice.nowVoices[i].state == HVoiceCtrl.VoiceKind.voice)
+						Voice.Stop(flags.transVoiceMouth[i]);
+				}
+			}
+		}
+#endif
+
 #endregion
 	}
 }

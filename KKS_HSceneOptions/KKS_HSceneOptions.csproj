@@ -7,7 +7,7 @@
     <ProjectGuid>{07DBDD5F-B781-4B79-89A4-56B84D548E4C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>KKS_HSceneOptions</RootNamespace>
+    <RootNamespace>KK_HSceneOptions</RootNamespace>
     <AssemblyName>KKS_HSceneOptions</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -80,14 +80,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="Plugin.cs" />
+    <Compile Include="HSceneOptions.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\.editorconfig">
-      <Link>.editorconfig</Link>
-    </None>
-    <None Include="packages.config" />
-  </ItemGroup>  
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>

@@ -1,16 +1,14 @@
-﻿using System;
+﻿using BepInEx;
+using BepInEx.Configuration;
+using HarmonyLib;
+using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-
-using BepInEx;
-using BepInEx.Configuration;
-using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Manager;
-
 using static ChaFileDefine;
 using static KK_HSceneOptions.SpeechControl;
 using static KK_HSceneOptions.Utilities;
@@ -85,11 +83,11 @@ namespace KK_HSceneOptions
 			{
 				harmony.PatchAll(typeof(Hooks));
 
-				//if (isVR = Type.GetType("VRHScene, Assembly-CSharp") != null)
-				//	harmony.PatchAll(typeof(Hooks_VR));
+				if (isVR = Type.GetType("VRHScene, Assembly-CSharp") != null)
+					harmony.PatchAll(typeof(Hooks_VR));
 
-				//if (isDarkness = Type.GetType("H3PDarkSonyu, Assembly-CSharp") != null)
-				//	harmony.PatchAll(typeof(Hooks_Darkness));
+				if (isDarkness = Type.GetType("H3PDarkSonyu, Assembly-CSharp") != null)
+					harmony.PatchAll(typeof(Hooks_Darkness));
 				
 			}
 			catch (Exception)
@@ -330,6 +328,31 @@ namespace KK_HSceneOptions
 				"Trigger a voice line based on the current context");			
 		}		
 
+		private void Update()
+		{
+			if (!flags)
+				return;
+
+			if (Input.GetKeyDown(InsertWaitKey.Value.MainKey) && InsertWaitKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				OnInsertClick();
+			else if (Input.GetKeyDown(InsertNowKey.Value.MainKey) && InsertNowKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				OnInsertNoVoiceClick();
+			else if (Input.GetKeyDown(SwallowKey.Value.MainKey) && SwallowKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				flags.click = HFlag.ClickKind.drink;
+			else if (Input.GetKeyDown(SpitKey.Value.MainKey) && SpitKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				flags.click = HFlag.ClickKind.vomit;
+			
+			if (Input.GetKeyDown(SubAccToggleKey.Value.MainKey) && SubAccToggleKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				ToggleMainGirlAccessories(category: 1);
+
+			if (Input.GetKeyDown(PantsuStripKey.Value.MainKey) && PantsuStripKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				SetClothesStateRange(new ClothesKind[] { ClothesKind.shorts }, true);
+			if (Input.GetKeyDown(TopClothesToggleKey.Value.MainKey) && TopClothesToggleKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				SetClothesStateRange(new ClothesKind[] { ClothesKind.top, ClothesKind.bra });
+			if (Input.GetKeyDown(BottomClothesToggleKey.Value.MainKey) && BottomClothesToggleKey.Value.Modifiers.All(x => Input.GetKey(x)))
+				SetClothesStateRange(new ClothesKind[] { ClothesKind.bot });
+		}
+
 		/// <summary>
 		/// Function to equip all accessories
 		/// </summary>
@@ -432,6 +455,7 @@ namespace KK_HSceneOptions
 				flags.gaugeMale = Mathf.Clamp(flags.gaugeMale, MaleGaugeMin.Value, MaleGaugeMax.Value);
 		}
 
+#if KK
 		internal void OnInsertNoVoiceClick()
 		{
 			int num = (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P) ? (flags.nowAnimationInfo.id % 2) : 0;
@@ -448,28 +472,16 @@ namespace KK_HSceneOptions
 					return;
 				}
 				flags.AddNotCondomPlay();
-#if KK
 				int num2 = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAdd20 && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
-#else
-				int num2 = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAddH && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
-#endif
 				flags.voice.playVoices[num] = 302 + num2;
 				flags.voice.SetSonyuIdleTime();
 				flags.isDenialvoiceWait = true;
 				if (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P)
 				{
 					int num3 = num ^ 1;
-#if KK
 					if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Singleton<Voice>.Instance.IsVoiceCheck(flags.transVoiceMouth[num3]))
-#else
-					if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Voice.IsPlay(flags.transVoiceMouth[num3]))
-#endif
 					{
-#if KK
 						Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[num3]);
-#else
-						Voice.Stop(flags.transVoiceMouth[num3]);
-#endif
 					}
 				}
 			}
@@ -478,15 +490,58 @@ namespace KK_HSceneOptions
 				flags.click = HFlag.ClickKind.insert_voice;
 			}
 		}
+#elif KKS
+		//
+		// Properties renamed on KKS
+		//
+		//	Game.isAdd20 => Game.isAddH
+		//	Voice.IsVoiceCheck => Voice.IsPlay
+		//
+		// Voice is static on KKS 
+		//
+		// Singleton<Voice>.Instance.Stop => Voice.Stop
+		//
+		internal void OnInsertNoVoiceClick()
+		{
+			int num = (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P) ? (flags.nowAnimationInfo.id % 2) : 0;
+			if (flags.mode != HFlag.EMode.sonyu3PMMF)
+			{
+				if (flags.isInsertOK[num] || flags.isDebug)
+				{
+					flags.click = HFlag.ClickKind.insert_voice;
+					return;
+				}
+				if (flags.isCondom)
+				{
+					flags.click = HFlag.ClickKind.insert_voice;
+					return;
+				}
+				flags.AddNotCondomPlay();
+				int num2 = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAddH && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
+				flags.voice.playVoices[num] = 302 + num2;
+				flags.voice.SetSonyuIdleTime();
+				flags.isDenialvoiceWait = true;
+				if (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P)
+				{
+					int num3 = num ^ 1;
+					if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Voice.IsPlay(flags.transVoiceMouth[num3]))
+					{
+						Voice.Stop(flags.transVoiceMouth[num3]);
+					}
+				}
+			}
+			else
+			{
+				flags.click = HFlag.ClickKind.insert_voice;
+			}
+		}
+#endif
 
+#if KK
 		private void OnInsertClick()
 		{
 			int num2 = (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P) ? (flags.nowAnimationInfo.id % 2) : 0;
-#if KK
 			int num = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAdd20 && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
-#else
-			int num = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAddH && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
-#endif
 			if (flags.mode != HFlag.EMode.sonyu3PMMF)
 			{
 				if (flags.isInsertOK[num2] || flags.isDebug)
@@ -515,19 +570,52 @@ namespace KK_HSceneOptions
 			if (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P)
 			{
 				int num3 = num2 ^ 1;
-#if KK
 				if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Singleton<Voice>.Instance.IsVoiceCheck(flags.transVoiceMouth[num3]))
 				{
 					Singleton<Voice>.Instance.Stop(flags.transVoiceMouth[num3]);
 				}
-#else
+			}
+		}
+#elif KKS
+		private void OnInsertClick()
+		{
+			int num2 = (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P) ? (flags.nowAnimationInfo.id % 2) : 0;
+			int num = ((flags.mode == HFlag.EMode.sonyu3P) ? ((!flags.nowAnimationInfo.isFemaleInitiative) ? 500 : 538) : ((Game.isAddH && flags.nowAnimationInfo.isFemaleInitiative) ? 38 : 0));
+			if (flags.mode != HFlag.EMode.sonyu3PMMF)
+			{
+				if (flags.isInsertOK[num2] || flags.isDebug)
+				{
+					flags.click = HFlag.ClickKind.insert;
+					flags.voice.playVoices[num2] = 301 + num;
+				}
+				else if (flags.isCondom)
+				{
+					flags.click = HFlag.ClickKind.insert;
+					flags.voice.playVoices[num2] = 301 + num;
+				}
+				else
+				{
+					flags.AddNotCondomPlay();
+					flags.voice.playVoices[num2] = 302 + num;
+					flags.voice.SetSonyuIdleTime();
+					flags.isDenialvoiceWait = true;
+				}
+			}
+			else
+			{
+				flags.click = HFlag.ClickKind.insert;
+				flags.voice.playVoices[num2] = 1001;
+			}
+			if (flags.mode == HFlag.EMode.houshi3P || flags.mode == HFlag.EMode.sonyu3P)
+			{
+				int num3 = num2 ^ 1;
 				if (voice.nowVoices[num3].state == HVoiceCtrl.VoiceKind.voice && Voice.IsPlay(flags.transVoiceMouth[num3]))
 				{
 					Voice.Stop(flags.transVoiceMouth[num3]);
 				}
-#endif
 			}
 		}
+#endif
 
 		/// <summary>
 		/// Display or hide all accessories within the specified category of the dominant female. Display them if more than half of the accessories in that category are currently hidden, otherwise hide them.
